@@ -13,3 +13,7 @@ See the workspace root README for setup and deployment. Configure `QA_PLATFORM_R
 - `DELETE /api/tasks/:id` — delete an owned task.
 
 Errors use `{ "error": { "code": string, "message": string, "details"?: object } }`. Unauthenticated requests return 401, malformed identifiers return 400, invalid bodies return 422, and inaccessible/missing resources return 404 without revealing ownership.
+
+## QA pipeline verification
+
+Pull requests receive an isolated Vercel preview and are validated by the external QA platform's API, functional browser, and accessibility suites.
