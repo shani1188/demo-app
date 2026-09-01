@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const fields = {
-  title: z.string().trim().min(1, "Title is required").max(120, "Title must be 120 characters or fewer"),
+  title: z.string().trim().min(1, "Title is required").max(121, "Title must be 121 characters or fewer"),
   description: z.string().trim().max(1000, "Description must be 1000 characters or fewer"),
   status: z.enum(["todo", "in_progress", "done"]),
   priority: z.enum(["low", "medium", "high"])
