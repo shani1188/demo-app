@@ -1,0 +1,53 @@
+name: Pull request QA
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Open pull request number to test
+        required: true
+        type: number
+
+permissions:
+  contents: read
+
+jobs:
+  dispatch:
+    name: Send open PR to QA platform
+    if: ${{ github.event_name == 'workflow_dispatch' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate QA repository configuration
+        env:
+          QA_PLATFORM_REPOSITORY: ${{ vars.QA_PLATFORM_REPOSITORY }}
+        run: |
+          test -n "$QA_PLATFORM_REPOSITORY"
+          test "${QA_PLATFORM_REPOSITORY#*/}" != "$QA_PLATFORM_REPOSITORY"
+      - name: Dispatch the pull request
+        uses: actions/github-script@v7
+        env:
+          QA_PLATFORM_REPOSITORY: ${{ vars.QA_PLATFORM_REPOSITORY }}
+          TARGET_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ inputs.pr_number || github.event.pull_request.number }}
+        with:
+          github-token: ${{ secrets.QA_PLATFORM_TOKEN }}
+          script: |
+            const [owner, repo] = process.env.QA_PLATFORM_REPOSITORY.split('/');
+            const prNumber = Number(process.env.PR_NUMBER);
+            if (!owner || !repo || !Number.isInteger(prNumber) || prNumber < 1) {
+              core.setFailed('QA platform repository or pull request number is invalid.');
+              return;
+            }
+            await github.rest.repos.createDispatchEvent({
+              owner,
+              repo,
+              event_type: 'test-open-pr',
+              client_payload: {
+                target_repository: process.env.TARGET_REPOSITORY,
+                pr_number: prNumber
+              }
+            });
+            core.info(`Dispatched open pull request ${prNumber} to the QA platform.`);
+
